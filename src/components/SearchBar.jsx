@@ -1,6 +1,7 @@
 import { useState, useContext } from 'react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { ThemeContext } from '../context/ThemeContext';
 import { SearchContext } from '../context/SearchContext';
 
@@ -12,6 +13,7 @@ const SearchBar = () => {
   const { setSearchResults } = useContext(SearchContext);
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -20,6 +22,9 @@ const SearchBar = () => {
       setSearchResults([]);
       return;
     }
+
+    // Navigate to search page to show results
+    navigate('/search');
 
     console.log('Searching for:', query);
     const cacheKey = `search_${query.toLowerCase()}`;
@@ -35,7 +40,7 @@ const SearchBar = () => {
 
     try {
       const response = await axios.get(
-        `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(query)}`,
+        `https://api.themoviedb.org/3/search/multi?query=${encodeURIComponent(query)}&include_adult=false`,
         {
           headers: {
             Authorization: `Bearer ${import.meta.env.VITE_TMDB_ACCESS_TOKEN}`,
@@ -43,15 +48,20 @@ const SearchBar = () => {
         }
       );
       console.log('Search API response:', response.data);
-      const results = response.data.results.map((movie) => ({
-        id: movie.id,
-        title: movie.title,
-        rating: movie.vote_average ?? 0,
-        poster: movie.poster_path ? `https://image.tmdb.org/t/p/w300${movie.poster_path}` : 'https://via.placeholder.com/300x450?text=No+Poster',
-        overview: movie.overview,
-        genre_ids: movie.genre_ids,
-        release_date: movie.release_date,
-      }));
+
+      const results = response.data.results
+        .filter(item => item.media_type === 'movie' || item.media_type === 'tv')
+        .map((item) => ({
+          id: item.id,
+          title: item.title || item.name,
+          rating: item.vote_average ?? 0,
+          poster: item.poster_path ? `https://image.tmdb.org/t/p/w300${item.poster_path}` : 'https://via.placeholder.com/300x450?text=No+Poster',
+          overview: item.overview,
+          genre_ids: item.genre_ids,
+          release_date: item.release_date || item.first_air_date,
+          media_type: item.media_type,
+        }));
+
       console.log('Mapped search results:', results);
       // Store in cache
       apiCache.set(cacheKey, results);
@@ -71,7 +81,7 @@ const SearchBar = () => {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="relative mb-8"
+      className="relative w-full"
       onSubmit={handleSearch}
     >
       <div className="flex w-full items-center">
@@ -79,14 +89,14 @@ const SearchBar = () => {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search Movies…"
+          placeholder="Search movies/series/indian/anime..."
           aria-label="Search movies"
-          className="flex-1 py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-cinema-red bg-white text-cinema-text placeholder-gray-400"
+          className="flex-1 py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-cinema-red bg-white text-cinema-text placeholder-gray-400 text-sm"
         />
         <motion.button
           type="submit"
           aria-label="Submit search"
-          className="ml-3 bg-cinema-red text-white px-4 py-2 rounded-md"
+          className="ml-2 bg-cinema-red text-white px-3 py-2 rounded-md text-sm"
           whileTap={{ scale: 0.98 }}
         >
           Search

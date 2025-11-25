@@ -1,0 +1,22 @@
+
+C:\Users\gabri\Documents\WEBSITES\movie-streaming-app\src\components\MovieManager.jsx
+  17:8  warning  React Hook useEffect has a missing dependency: 'fetchNowPlaying'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\gabri\Documents\WEBSITES\movie-streaming-app\src\components\SeriesManager.jsx
+  4:26  error  'type' is assigned a value but never used                                                no-unused-vars
+  7:12  error  'loading' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\gabri\Documents\WEBSITES\movie-streaming-app\src\context\AuthContext.jsx
+  4:14  error  Fast refresh only works when a file only exports components. Move your React context(s) to a separate file  react-refresh/only-export-components
+
+C:\Users\gabri\Documents\WEBSITES\movie-streaming-app\src\pages\HomePage.jsx
+  81:1  error  Parsing error: 'return' outside of function
+
+C:\Users\gabri\Documents\WEBSITES\movie-streaming-app\src\pages\MovieDetailsPage.jsx
+  3:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\gabri\Documents\WEBSITES\movie-streaming-app\src\pages\SeriesDetailsPage.jsx
+  36:60  error  'genresForFallback' is assigned a value but never used  no-unused-vars
+
+✖ 7 problems (6 errors, 1 warning)
+

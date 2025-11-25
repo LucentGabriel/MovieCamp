@@ -1,16 +1,16 @@
 import React, { useEffect, useContext, useState, lazy, Suspense } from 'react';
-import { motion } from 'framer-motion';
+import { supabase } from '../supabaseClient';
 import { useInView } from 'react-intersection-observer';
 import { useNavigate } from 'react-router-dom';
 import { ThemeContext } from '../context/ThemeContext';
-import { SearchContext } from '../context/SearchContext';
+import { usePlayer } from '../context/PlayerContext';
 import MovieCard from '../components/MovieCard';
 
 const MovieRow = lazy(() => import('../components/MovieRow'));
 
 const HomePage = () => {
   const { isDarkMode } = useContext(ThemeContext);
-  const { searchResults } = useContext(SearchContext);
+  const { playVideo } = usePlayer();
   const navigate = useNavigate();
 
   const TMDB_TOKEN = import.meta.env.VITE_TMDB_ACCESS_TOKEN;
@@ -43,6 +43,31 @@ const HomePage = () => {
     fetchFeatured();
   }, [TMDB_TOKEN]);
 
+  const handleWatchNow = async () => {
+    if (!featured) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('movie_links')
+        .select('video_url')
+        .eq('tmdb_id', String(featured.id))
+        .single();
+
+      if (error) {
+        console.error('Error fetching video URL:', error);
+      }
+
+      if (data?.video_url) {
+        playVideo(data.video_url);
+      } else {
+        console.log('No video URL found for this movie.');
+        playVideo('');
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err);
+    }
+  };
+
   // ---- Navigate to correct details page ----
   const handleCardClick = (movie) => {
     if (!movie) return;
@@ -73,13 +98,12 @@ const HomePage = () => {
 
   return (
     <div
-      className={`min-h-screen transition-colors duration-300 ${
-        isDarkMode ? 'bg-cinema-black text-white' : 'bg-white text-cinema-text'
-      }`}
+      className={`min-h-screen transition-colors duration-300 ${isDarkMode ? 'bg-cinema-black text-white' : 'bg-white text-cinema-text'
+        }`}
     >
       {/* ---- FEATURED HERO SECTION ---- */}
       <div
-        className="relative w-full h-[70vh] bg-cover bg-center flex items-end"
+        className="relative w-full h-screen bg-cover bg-center flex items-end"
         style={{
           backgroundImage: featured?.backdrop_path
             ? `url(https://image.tmdb.org/t/p/original${featured.backdrop_path})`
@@ -87,71 +111,37 @@ const HomePage = () => {
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-        <motion.div
-          className="relative z-10 p-10 max-w-3xl"
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
+        <div
+          className="relative z-10 p-4 sm:p-6 md:p-10 max-w-3xl"
         >
-          <h1 className="text-4xl md:text-5xl font-bold mb-3">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3">
             {featured?.title || 'No Featured Movie'}
           </h1>
-          <p className="text-gray-300 text-sm md:text-base line-clamp-3 mb-5">
+          <p className="text-gray-300 text-sm sm:text-base line-clamp-3 mb-5">
             {featured?.overview ||
               (error ? `⚠️ ${error}` : 'Fetching trending movie details...')}
           </p>
           {featured && (
             <button
-              onClick={() => handleCardClick(featured)}
-              className="bg-cinema-red hover:bg-red-700 text-white px-6 py-3 rounded-md font-semibold transition"
+              onClick={handleWatchNow}
+              className="bg-cinema-red hover:bg-red-700 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-md font-semibold transition text-sm sm:text-base min-h-[44px]"
             >
               Watch Now
             </button>
           )}
-        </motion.div>
+        </div>
       </div>
 
       {/* ---- MAIN CONTENT ---- */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {/* Search Results Section */}
-        {searchResults.length > 0 && (
-          <div className="mb-10">
-            <h2
-              className={`text-3xl font-bold ${
-                isDarkMode ? 'text-white' : 'text-cinema-text'
-              } mb-6`}
-            >
-              Search Results
-            </h2>
-            <motion.div
-              className="flex overflow-x-auto space-x-4 pb-4 scrollbar-thin scrollbar-thumb-cinema-red scrollbar-track-cinema-black"
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              {searchResults.map((movie) => (
-                <div
-                  key={movie.id}
-                  className="flex-none w-48"
-                  onClick={() => handleCardClick(movie)}
-                >
-                  <MovieCard movie={movie} />
-                </div>
-              ))}
-            </motion.div>
-            <hr className="my-4 dark:border-cinema-black" />
-          </div>
-        )}
-
         {/* Movie Categories */}
         {categories.map((category) => (
           <Suspense
             key={category.fetchType}
             fallback={
               <div
-                className={`text-center ${
-                  isDarkMode ? 'text-white' : 'text-cinema-text'
-                }`}
+                className={`text-center ${isDarkMode ? 'text-white' : 'text-cinema-text'
+                  }`}
               >
                 Loading {category.title}...
               </div>

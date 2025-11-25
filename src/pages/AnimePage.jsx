@@ -1,127 +1,119 @@
-import { useEffect, useState, useContext, useRef, useCallback } from "react";
+import React, { useEffect, useState, useContext, lazy, Suspense } from "react";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { ThemeContext } from "../context/ThemeContext";
-import MovieCard from "../components/MovieCard";
 import axios from "axios";
+
+const MovieRow = lazy(() => import("../components/MovieRow"));
 
 const AnimePage = () => {
   const { isDarkMode } = useContext(ThemeContext);
-  const [anime, setAnime] = useState([]);
-  const [page, setPage] = useState(1);
-  const [category, setCategory] = useState("top_rated");
-  const [isLoading, setIsLoading] = useState(false);
-  const observer = useRef();
+  const navigate = useNavigate();
+  const TMDB_TOKEN = import.meta.env.VITE_TMDB_ACCESS_TOKEN;
+  const [featured, setFeatured] = useState(null);
 
-  const fetchAnime = async (pageNum = 1) => {
-    setIsLoading(true);
-    let url = "";
+  // Fetch random featured anime
+  useEffect(() => {
+    const fetchFeatured = async () => {
+      try {
+        const res = await axios.get(
+          `https://api.themoviedb.org/3/discover/tv?with_origin_country=JP&sort_by=vote_average.desc&vote_count.gte=50&page=1`,
+          { headers: { Authorization: `Bearer ${TMDB_TOKEN}` } }
+        );
+        const data = res.data.results;
+        if (data && data.length > 0) {
+          const random = data[Math.floor(Math.random() * data.length)];
+          setFeatured(random);
+        }
+      } catch (err) {
+        console.error("Error fetching featured anime:", err);
+      }
+    };
+    fetchFeatured();
+  }, [TMDB_TOKEN]);
 
-    if (category === "currently_airing") {
-      url = `https://api.themoviedb.org/3/discover/tv?with_origin_country=JP&first_air_date.gte=2025-01-01&sort_by=first_air_date.desc&page=${pageNum}`;
-    } else if (category === "popular") {
-      url = `https://api.themoviedb.org/3/discover/tv?with_origin_country=JP&sort_by=popularity.desc&page=${pageNum}`;
-    } else {
-      url = `https://api.themoviedb.org/3/discover/tv?with_origin_country=JP&sort_by=vote_average.desc&vote_count.gte=50&page=${pageNum}`;
-    }
-
-    try {
-      const response = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${import.meta.env.VITE_TMDB_ACCESS_TOKEN}`,
-        },
-      });
-
-      const newAnime = response.data.results.map((item) => ({
-        id: item.id,
-        title: item.name,
-        rating: item.vote_average ?? 0,
-        poster: item.poster_path
-          ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
-          : "https://via.placeholder.com/300x450?text=No+Image",
-        overview: item.overview || "No description available.",
-        release_date: item.first_air_date || "N/A",
-        media_type: "tv",
-      }));
-
-      setAnime((prev) => [...prev, ...newAnime]);
-    } catch (err) {
-      console.error("Error fetching Anime:", err);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleCardClick = (anime) => {
+    if (!anime) return;
+    navigate(`/series/${anime.id}`, {
+      state: { series: { ...anime, media_type: "tv" }, mediaType: "tv" },
+    });
   };
 
-  useEffect(() => {
-    setAnime([]);
-    fetchAnime(1);
-  }, [category]);
+  const today = new Date().toISOString().split("T")[0];
 
-  useEffect(() => {
-    if (page > 1) fetchAnime(page);
-  }, [page]);
-
-  const lastCardRef = useCallback(
-    (node) => {
-      if (isLoading) return;
-      if (observer.current) observer.current.disconnect();
-
-      observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting) setPage((prev) => prev + 1);
-      });
-
-      if (node) observer.current.observe(node);
+  const categories = [
+    {
+      title: "Top Rated Anime",
+      params: { sort_by: "vote_average.desc", "vote_count.gte": "50", with_origin_country: "JP", with_genres: "16" },
     },
-    [isLoading]
-  );
+    {
+      title: "Popular Anime",
+      params: { sort_by: "popularity.desc", with_origin_country: "JP", with_genres: "16" },
+    },
+    {
+      title: "New Anime",
+      params: { sort_by: "first_air_date.desc", with_origin_country: "JP", with_genres: "16" },
+    },
+    {
+      title: "Upcoming Anime",
+      params: { sort_by: "first_air_date.asc", "first_air_date.gte": today, with_origin_country: "JP", with_genres: "16" },
+    },
+    {
+      title: "Action Anime",
+      params: { with_genres: "10759", with_origin_country: "JP" }, // 10759 is Action & Adventure
+    },
+    {
+      title: "Comedy Anime",
+      params: { with_genres: "35", with_origin_country: "JP", with_genres: "16" }, // 35 is Comedy, 16 is Animation
+    },
+    // Note: Horror (27) is not a standard TV genre, using Mystery (9648) or just keeping it if it works for movies, but for TV it might be empty. 
+    // Let's try to include it but also add Animation to ensure it's anime.
+    {
+      title: "Horror / Mystery Anime",
+      params: { with_genres: "9648", with_origin_country: "JP", with_genres: "16" },
+    },
+  ];
 
   return (
-    <div
-      className={`min-h-screen pt-20 px-4 sm:px-6 lg:px-8 ${
-        isDarkMode ? "bg-cinema-dark text-white" : "bg-white text-cinema-text"
-      }`}
-    >
-      <h1 className="text-4xl font-bold mb-6">Anime</h1>
-
-      {/* Category buttons */}
-      <div className="flex flex-wrap gap-3 mb-6">
-        {[
-          { key: "top_rated", label: "Top Rated" },
-          { key: "popular", label: "Popular" },
-          { key: "currently_airing", label: "Currently Airing (2025+)" },
-        ].map((btn) => (
-          <button
-            key={btn.key}
-            onClick={() => setCategory(btn.key)}
-            className={`px-4 py-2 rounded-lg font-semibold transition ${
-              category === btn.key
-                ? "bg-cinema-red text-white"
-                : "bg-gray-700 hover:bg-gray-600 text-gray-300"
-            }`}
-          >
-            {btn.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Anime Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        {anime.map((item, index) => {
-          if (index === anime.length - 1) {
-            return (
-              <div ref={lastCardRef} key={item.id}>
-                <MovieCard movie={item} />
-              </div>
-            );
-          }
-          return <MovieCard key={item.id} movie={item} />;
-        })}
-      </div>
-
-      {isLoading && (
-        <div className="text-center mt-8">
-          <div className="animate-spin w-8 h-8 border-4 border-cinema-red border-t-transparent rounded-full mx-auto"></div>
-          <p className="mt-2">Loading more...</p>
+    <div className={`min-h-screen ${isDarkMode ? "bg-cinema-black text-white" : "bg-white text-cinema-text"}`}>
+      {/* ---- HERO FEATURED ---- */}
+      {featured && (
+        <div
+          className="relative w-full h-screen bg-cover bg-center flex items-end"
+          style={{
+            backgroundImage: featured.backdrop_path
+              ? `url(https://image.tmdb.org/t/p/original${featured.backdrop_path})`
+              : "linear-gradient(to bottom, #000, #1a1a1a)",
+          }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+          <motion.div className="relative z-10 p-10 max-w-3xl" initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+            <h1 className="text-4xl md:text-5xl font-bold mb-3">{featured.name}</h1>
+            <p className="text-gray-300 text-sm md:text-base line-clamp-3 mb-5">{featured.overview}</p>
+            <button
+              onClick={() => handleCardClick(featured)}
+              className="bg-cinema-red hover:bg-red-700 text-white px-6 py-3 rounded-md font-semibold transition"
+            >
+              Watch Now
+            </button>
+          </motion.div>
         </div>
       )}
+
+      {/* ---- SCROLLABLE ANIME ROWS ---- */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        {categories.map((cat) => (
+          <Suspense key={cat.title} fallback={<div>Loading {cat.title}...</div>}>
+            <MovieRow
+              title={cat.title}
+              fetchType="discover"
+              mediaType="tv"
+              discoverParams={cat.params}
+              onCardClick={handleCardClick}
+            />
+          </Suspense>
+        ))}
+      </div>
     </div>
   );
 };

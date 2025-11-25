@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
+import { supabase } from '../supabaseClient';
 import { motion } from "framer-motion";
 import MovieModal from "../components/MovieModal";
+import { usePlayer } from "../context/PlayerContext";
 
 const TMDB_TOKEN = import.meta.env.VITE_TMDB_ACCESS_TOKEN;
 const TMDB_BASE = "https://api.themoviedb.org/3";
@@ -60,19 +62,19 @@ const resolveImageUrls = (item) => {
     item?.poster && typeof item.poster === "string" && item.poster.startsWith("http")
       ? item.poster
       : item?.poster_path
-      ? `${base}/w500${item.poster_path}`
-      : item?.posterUrl
-      ? item.posterUrl
-      : null;
+        ? `${base}/w500${item.poster_path}`
+        : item?.posterUrl
+          ? item.posterUrl
+          : null;
 
   const backdrop =
     item?.backdrop && typeof item.backdrop === "string" && item.backdrop.startsWith("http")
       ? item.backdrop
       : item?.backdrop_path
-      ? `${base}/original${item.backdrop_path}`
-      : item?.backdropUrl
-      ? item.backdropUrl
-      : poster;
+        ? `${base}/original${item.backdrop_path}`
+        : item?.backdropUrl
+          ? item.backdropUrl
+          : poster;
 
   return { poster, backdrop };
 };
@@ -81,11 +83,38 @@ function MovieDetailsPage() {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const { playVideo } = usePlayer();
 
   const [movie, setMovie] = useState(location.state?.movie || null);
   const [recommended, setRecommended] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
   const [loading, setLoading] = useState(!location.state?.movie);
+
+  const handleWatchNow = async () => {
+    if (!movie) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('movie_links')
+        .select('video_url')
+        .eq('tmdb_id', String(movie.id))
+        .single();
+
+      if (error) {
+        console.error('Error fetching video URL:', error);
+      }
+
+      if (data?.video_url) {
+        playVideo(data.video_url);
+      } else {
+        console.log('No video URL found for this movie.');
+        playVideo('');
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err);
+    }
+  };
 
   // Debug log incoming object (remove after tests)
   useEffect(() => {
@@ -180,48 +209,48 @@ function MovieDetailsPage() {
   return (
     <div className="bg-black text-white min-h-screen">
       {/* HERO */}
-      <div className="relative w-full h-[70vh] flex items-center justify-center bg-black overflow-hidden">
+      <div className="relative w-full h-[50vh] sm:h-[60vh] md:h-[70vh] flex items-center justify-center bg-black overflow-hidden">
         <img src={heroImage} alt={title} className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
-        <motion.div className="relative z-10 p-10 max-w-3xl" initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
-          <h1 className="text-4xl md:text-5xl font-bold mb-3">{title}</h1>
-          <p className="text-gray-300 text-sm md:text-base line-clamp-3 mb-5">{movie.overview || "No description available."}</p>
-          <div className="flex gap-4">
-            <button onClick={() => setIsModalOpen(true)} className="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-md font-semibold">Watch Trailer</button>
-            <button className="bg-white text-black hover:bg-gray-200 px-6 py-3 rounded-md font-semibold">Watch Now</button>
+        <motion.div className="relative z-10 p-4 sm:p-6 md:p-10 max-w-3xl" initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3">{title}</h1>
+          <p className="text-gray-300 text-sm sm:text-base line-clamp-2 sm:line-clamp-3 mb-5">{movie.overview || "No description available."}</p>
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <button onClick={() => setIsModalOpen(true)} className="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-md font-semibold min-h-[44px]">Watch Trailer</button>
+            <button onClick={handleWatchNow} className="bg-white text-black hover:bg-gray-200 px-6 py-3 rounded-md font-semibold min-h-[44px]">Watch Now</button>
           </div>
         </motion.div>
       </div>
 
-      <div className="flex justify-end pr-10 mt-4">
-        <button className="text-red-500 font-semibold text-lg underline hover:text-red-400">Download</button>
+      <div className="flex justify-end pr-4 sm:pr-10 mt-4">
+        <button className="text-red-500 font-semibold text-base sm:text-lg underline hover:text-red-400 min-h-[44px] px-2">Download</button>
       </div>
 
       {/* INFO */}
-      <div className="flex flex-col md:flex-row gap-8 px-10 py-10">
-        <img src={posterImage} alt={title} className="w-[250px] rounded-lg shadow-lg" />
+      <div className="flex flex-col md:flex-row gap-6 sm:gap-8 px-4 sm:px-6 md:px-10 py-6 sm:py-10">
+        <img src={posterImage} alt={title} className="w-full sm:w-[200px] md:w-[250px] rounded-lg shadow-lg mx-auto md:mx-0" />
         <div>
-          <h1 className="text-3xl font-bold mb-2">{title}</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">{title}</h1>
           <div className="flex items-center gap-2 mb-3">
             <span className="text-yellow-400 text-lg">★</span>
             <p className="text-gray-300">{rating} / 10</p>
             <span className="mx-2 text-gray-500">•</span>
             <p className="text-gray-400">{releaseDate?.split("-")[0]}</p>
           </div>
-          <p className="text-gray-400 mb-3">{movie.genres?.map((g) => g.name).join(", ")}</p>
-          <p className="text-gray-300 leading-relaxed max-w-3xl">{movie.overview}</p>
+          <p className="text-gray-400 mb-3 text-sm sm:text-base">{movie.genres?.map((g) => g.name).join(", ")}</p>
+          <p className="text-gray-300 leading-relaxed max-w-3xl text-sm sm:text-base">{movie.overview}</p>
         </div>
       </div>
 
       {/* RECOMMENDED */}
       {recommended.length > 0 && (
-        <div className="px-10 pb-10">
-          <h2 className="text-2xl font-semibold mb-5">You may also like</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
+        <div className="px-4 sm:px-6 md:px-10 pb-10">
+          <h2 className="text-xl sm:text-2xl font-semibold mb-5">You may also like</h2>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4">
             {recommended.map((rec) => (
               <div key={`${rec.id}_${rec.media_type}`} onClick={() => handleRecommendClick(rec)} className="relative group cursor-pointer">
-                <img src={rec.poster_path ? `https://image.tmdb.org/t/p/w500${rec.poster_path}` : (rec.poster || "https://via.placeholder.com/300x450?text=No+Poster")} alt={rec.title || rec.name} className="rounded-lg w-full h-[250px] object-cover group-hover:opacity-75 transition" />
-                <p className="mt-2 text-sm text-gray-300 truncate">{rec.title || rec.name}</p>
+                <img src={rec.poster_path ? `https://image.tmdb.org/t/p/w500${rec.poster_path}` : (rec.poster || "https://via.placeholder.com/300x450?text=No+Poster")} alt={rec.title || rec.name} className="rounded-lg w-full h-[180px] sm:h-[220px] md:h-[250px] object-cover group-hover:opacity-75 transition" />
+                <p className="mt-2 text-xs sm:text-sm text-gray-300 truncate">{rec.title || rec.name}</p>
               </div>
             ))}
           </div>

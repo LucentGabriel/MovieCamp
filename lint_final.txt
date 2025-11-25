@@ -1,0 +1,27 @@
+
+C:\Users\gabri\Documents\WEBSITES\movie-streaming-app\src\components\SeriesManager.jsx
+  7:12  error  'loading' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\gabri\Documents\WEBSITES\movie-streaming-app\src\context\AuthContext.jsx
+  4:14  error  Fast refresh only works when a file only exports components. Move your React context(s) to a separate file  react-refresh/only-export-components
+
+C:\Users\gabri\Documents\WEBSITES\movie-streaming-app\src\pages\HomePage.jsx
+  3:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\gabri\Documents\WEBSITES\movie-streaming-app\src\pages\MovieDetailsPage.jsx
+    3:28  error  'TMDB_TOKEN' is not defined   no-undef
+   75:18  error  'useParams' is not defined    no-undef
+   76:20  error  'useLocation' is not defined  no-undef
+   77:20  error  'useNavigate' is not defined  no-undef
+   78:25  error  'usePlayer' is not defined    no-undef
+   80:29  error  'useState' is not defined     no-undef
+   81:41  error  'useState' is not defined     no-undef
+   82:41  error  'useState' is not defined     no-undef
+   84:33  error  'useState' is not defined     no-undef
+   90:37  error  'supabase' is not defined     no-undef
+  112:3   error  'useEffect' is not defined    no-undef
+  120:3   error  'useEffect' is not defined    no-undef
+  149:3   error  'useEffect' is not defined    no-undef
+
+✖ 16 problems (16 errors, 0 warnings)
+

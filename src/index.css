@@ -3,57 +3,52 @@
 @tailwind utilities;
 
 /* Base Reset */
-html, body, #root {
+html,
+body,
+#root {
   margin: 0;
   padding: 0;
   width: 100%;
   height: 100%;
   font-family: 'Poppins', sans-serif;
-}
-
-/* Dark Mode (when .dark is on <html>) */
-html.dark body {
-  background-color: #000000; /* cinema-black */
+  background-color: #000000;
+  /* cinema-black */
   color: white;
-}
-
-/* Light Mode (default) */
-body {
-  background-color: #ffffff; /* cinema-light */
-  color: #1a1a1a; /* cinema-text */
 }
 
 /* Hide Scrollbar (Cross-browser) */
 .scrollbar-hide {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
+
 .scrollbar-hide::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  display: none;
+  /* Chrome, Safari, Opera */
 }
 
 /* Custom Scrollbar (Dark Mode) */
 .scrollbar-thin {
   scrollbar-width: thin;
 }
+
 .scrollbar-thin::-webkit-scrollbar {
   height: 8px;
 }
+
 .scrollbar-thin::-webkit-scrollbar-track {
-  background: #000000; /* cinema-black */
-}
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background: #e50914; /* cinema-red */
-  border-radius: 4px;
-}
-.scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: #ff1a2d;
+  background: #000000;
+  /* cinema-black */
 }
 
-/* Light Mode Scrollbar */
-html:not(.dark) .scrollbar-thin::-webkit-scrollbar-track {
-  background: #ffffff;
-}
-html:not(.dark) .scrollbar-thin::-webkit-scrollbar-thumb {
+.scrollbar-thin::-webkit-scrollbar-thumb {
   background: #e50914;
+  /* cinema-red */
+  border-radius: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #ff1a2d;
 }

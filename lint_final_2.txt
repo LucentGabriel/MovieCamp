@@ -1,0 +1,10 @@
+
+C:\Users\gabri\Documents\WEBSITES\movie-streaming-app\src\components\SeriesManager.jsx
+  42:9   error  'setLoading' is not defined  no-undef
+  56:13  error  'setLoading' is not defined  no-undef
+
+C:\Users\gabri\Documents\WEBSITES\movie-streaming-app\src\context\AuthContext.jsx
+  4:14  error  Fast refresh only works when a file only exports components. Move your React context(s) to a separate file  react-refresh/only-export-components
+
+✖ 3 problems (3 errors, 0 warnings)
+
